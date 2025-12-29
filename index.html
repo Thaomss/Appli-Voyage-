@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portefeuille Voyage</title>
+  <style>
+    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; max-width:1040px; margin:0 auto; }
+    h1 { text-align:center; margin: 6px 0 14px; }
+    h2 { margin: 14px 0 8px; }
+    label { display:block; margin-top:6px; }
+    input, select, button { width:100%; padding:10px; margin:6px 0; box-sizing:border-box; }
+    button { cursor:pointer; }
+    table { width:100%; border-collapse:collapse; background:#fff; margin-top:10px; }
+    th, td { border:1px solid #ddd; padding:8px; text-align:center; vertical-align: middle; }
+    hr { margin: 18px 0; }
+    .box { background:#fff; border:1px solid #ddd; padding:12px; border-radius:14px; }
+    .msg { margin:10px 0; padding:10px; border-radius:14px; }
+    .ok { background:#eef9ee; border:1px solid #bfe6bf; }
+    .warn { background:#fff7e6; border:1px solid #ffd27a; }
+    .err { background:#ffecec; border:1px solid #ffb3b3; }
+    .tabs { display:flex; gap:10px; margin: 10px 0 14px; }
+    .tabBtn { padding:10px; border-radius:14px; border:1px solid #ddd; background:#fff; }
+    .tabBtn.active { border-color:#999; font-weight:bold; }
+    .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
+    .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
+    .grid4 { display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px; }
+    .small { font-size:12px; color:#666; }
+    .neg { font-weight:800; }
+    .noteRow td { text-align:left; background:#fafafa; }
+    .noteOk { color:#1b7f2a; font-weight:700; }
+    .noteWarn { color:#a05a00; font-weight:700; }
+    .noteInfo { color:#0b5cad; font-weight:700; }
+    @media (max-width: 980px){ .grid2, .grid3, .grid4 { grid-template-columns:1fr; } }
+  </style>
+</head>
+
+<body>
+  <h1>🧾 Portefeuille Voyage 🇯🇵</h1>
+
+  <div class="tabs">
+    <button id="tabSaisie" class="tabBtn active" type="button">📝 Saisie</button>
+    <button id="tabRecap" class="tabBtn" type="button">📊 Récap</button>
+  </div>
+
+  <div id="status" class="msg ok">✅ OK : prêt</div>
+
+  <!-- PAGE SAISIE -->
+  <div id="pageSaisie">
+    <div class="box">
+      <h2>⚙️ Paramètres</h2>
+      <div class="grid2">
+        <div>
+          <label>💱 Taux ¥ → €</label>
+          <input id="rateInput" type="number" step="0.000001" placeholder="Ex : 0.0055" />
+          <div class="small">Astuce : mets un taux moyen et ajuste si besoin, tout se recalcule</div>
+        </div>
+        <div>
+          <label>🗒️ Note</label>
+          <input id="tripNote" placeholder="Ex : Japon 2025" />
+          <div class="small">Juste un titre, pour toi</div>
+        </div>
+      </div>
+      <button id="btnSaveRate" type="button">💾 Enregistrer paramètres</button>
+    </div>
+
+    <hr />
+
+    <div class="box">
+      <h2>👥 Participants</h2>
+      <div class="grid2">
+        <input id="personName" placeholder="Nom du participant (ex Thomas)" autocomplete="off" />
+        <button id="btnAddPerson" type="button">➕ Ajouter participant</button>
+      </div>
+      <div class="small">Tu peux appuyer sur Entrée</div>
+
+      <h2>💶 Budget (ajouts / retraits)</h2>
+      <div class="grid4">
+        <select id="budgetPerson"></select>
+        <input id="budgetEuro" type="number" step="0.01" placeholder="Ex : 2000" />
+        <button id="btnAddBudget" type="button">➕ Ajouter</button>
+        <button id="btnRemoveBudget" type="button">➖ Retirer</button>
+      </div>
+      <div class="small">Ex : Thomas +2000€ puis +1000€ plus tard, ou ➖ si tu t’es trompé</div>
+
+      <h2>📋 Liste</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Participant</th>
+            <th>Budget total (€)</th>
+            <th>Suppr</th>
+          </tr>
+        </thead>
+        <tbody id="peopleTable"></tbody>
+      </table>
+    </div>
+
+    <hr />
+
+    <div class="box">
+      <h2>🧾 Ajouter une dépense</h2>
+
+      <div class="grid3">
+        <div>
+          <label>💳 Payé par</label>
+          <select id="payer"></select>
+        </div>
+        <div>
+          <label>🎁 Pour</label>
+          <select id="beneficiary"></select>
+          <div class="small">Par défaut : la même personne</div>
+        </div>
+        <div>
+          <label>🏷️ Catégorie</label>
+          <select id="category">
+            <option value="🚆 Transport">🚆 Transport</option>
+            <option value="🍜 Nourriture">🍜 Nourriture</option>
+            <option value="🏨 Hôtel">🏨 Hôtel</option>
+            <option value="🛍️ Shopping">🛍️ Shopping</option>
+            <option value="🎟️ Activité">🎟️ Activité</option>
+            <option value="✨ Autre">✨ Autre</option>
+          </select>
+        </div>
+      </div>
+
+      <label>📝 Description</label>
+      <input id="label" placeholder="Ex : ramen, métro, snack, shrine..." />
+
+      <div class="grid3">
+        <div>
+          <label>💴 Montant (¥)</label>
+          <input id="yen" type="number" placeholder="Ex : 2500" />
+        </div>
+        <div>
+          <label>🔢 Quantité</label>
+          <input id="qty" type="number" value="1" min="1" />
+        </div>
+        <div>
+          <label>📅 Date</label>
+          <input id="date" type="date" />
+        </div>
+      </div>
+
+      <button id="btnAddExpense" type="button">✅ Ajouter dépense</button>
+
+      <h2>🧾 Dépenses</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Payeur</th>
+            <th>Pour</th>
+            <th>Catégorie</th>
+            <th>Description</th>
+            <th>¥</th>
+            <th>€</th>
+            <th>Suppr</th>
+          </tr>
+        </thead>
+        <tbody id="expenses"></tbody>
+      </table>
+
+      <button id="btnReset" type="button">🧨 Tout réinitialiser</button>
+      <div class="small">Efface participants, budgets et dépenses</div>
+    </div>
+  </div>
+
+  <!-- PAGE RÉCAP -->
+  <div id="pageRecap" style="display:none;">
+    <div class="box">
+      <h2>📊 Récap</h2>
+
+      <div class="grid2">
+        <button id="btnBackup" type="button">📥 Sauvegarder (JSON)</button>
+        <button id="btnRestore" type="button">📤 Restaurer (JSON)</button>
+      </div>
+      <input id="restoreFile" type="file" accept="application/json,.json" style="display:none;" />
+      <div class="small">Conseil Safari iPhone : fais une sauvegarde 1×/jour (iCloud Drive ou WhatsApp à toi-même)</div>
+
+      <div id="recapHeader" class="small" style="margin-top:8px;"></div>
+
+      <h2>👤 Résumé par personne</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Personne</th>
+            <th>Budget (€)</th>
+            <th>Payé total (€)</th>
+            <th>Restant (€)</th>
+            <th>Restant (¥)</th>
+            <th>Payé pour soi (€)</th>
+            <th>Payé pour autres (€)</th>
+          </tr>
+        </thead>
+        <tbody id="recapPeople"></tbody>
+      </table>
+
+      <h2>🔁 Qui doit quoi à qui</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Débiteur</th>
+            <th>Créancier</th>
+            <th>Montant (€)</th>
+          </tr>
+        </thead>
+        <tbody id="recapDebts"></tbody>
+      </table>
+      <div class="small">Seules les dépenses “payeur ≠ pour” créent une dette</div>
+
+      <h2>🧾 Détails des dépenses</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Payeur</th>
+            <th>Pour</th>
+            <th>Catégorie</th>
+            <th>Description</th>
+            <th>¥</th>
+            <th>€</th>
+          </tr>
+        </thead>
+        <tbody id="recapDetails"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const elStatus = document.getElementById("status")
+    function setStatus(type, text){
+      elStatus.className = "msg " + type
+      elStatus.textContent = text
+    }
+
+    function storageAvailable(){
+      try {
+        const k="__t__"
+        localStorage.setItem(k,"1")
+        localStorage.removeItem(k)
+        return true
+      } catch (e){
+        return false
+      }
+    }
+    const canStore = storageAvailable()
+
+    // State
+    let rate = 0.0055
+    let tripNote = ""
+    let people = []
+    let budgets = {}
+    let expenses = []
+
+    // Elements
+    const pageSaisie = document.getElementById("pageSaisie")
+    const pageRecap = document.getElementById("pageRecap")
+    const tabSaisie = document.getElementById("tabSaisie")
+    const tabRecap = document.getElementById("tabRecap")
+
+    const elRateInput = document.getElementById("rateInput")
+    const elTripNote = document.getElementById("tripNote")
+    const elBtnSaveRate = document.getElementById("btnSaveRate")
+
+    const elPersonName = document.getElementById("personName")
+    const elPeopleTable = document.getElementById("peopleTable")
+    const elBudgetPerson = document.getElementById("budgetPerson")
+    const elBudgetEuro = document.getElementById("budgetEuro")
+    const elBtnAddBudget = document.getElementById("btnAddBudget")
+    const elBtnRemoveBudget = document.getElementById("btnRemoveBudget")
+    const elBtnAddPerson = document.getElementById("btnAddPerson")
+
+    const elPayer = document.getElementById("payer")
+    const elBeneficiary = document.getElementById("beneficiary")
+    const elCategory = document.getElementById("category")
+    const elLabel = document.getElementById("label")
+    const elYen = document.getElementById("yen")
+    const elQty = document.getElementById("qty")
+    const elDate = document.getElementById("date")
+    const elBtnAddExpense = document.getElementById("btnAddExpense")
+    const elExpenses = document.getElementById("expenses")
+    const elBtnReset = document.getElementById("btnReset")
+
+    // Recap elements
+    const elRecapHeader = document.getElementById("recapHeader")
+    const elRecapPeople = document.getElementById("recapPeople")
+    const elRecapDebts = document.getElementById("recapDebts")
+    const elRecapDetails = document.getElementById("recapDetails")
+
+    // Backup/Restore elements
+    const elBtnBackup = document.getElementById("btnBackup")
+    const elBtnRestore = document.getElementById("btnRestore")
+    const elRestoreFile = document.getElementById("restoreFile")
+
+    // Storage
+    function loadData(){
+      if (!canStore){
+        setStatus("warn","⚠️ OK : prêt — mais la sauvegarde navigateur est bloquée en mode fichier")
+        return
+      }
+      try{
+        rate = Number(localStorage.getItem("pv_rate_v7")) || 0.0055
+        tripNote = localStorage.getItem("pv_note_v7") || ""
+        people = JSON.parse(localStorage.getItem("pv_people_v7")) || []
+        budgets = JSON.parse(localStorage.getItem("pv_budgets_v7")) || {}
+        expenses = JSON.parse(localStorage.getItem("pv_expenses_v7")) || []
+      } catch(e){
+        rate = 0.0055
+        tripNote = ""
+        people = []
+        budgets = {}
+        expenses = []
+      }
+    }
+
+    function saveData(){
+      if (!canStore) return
+      localStorage.setItem("pv_rate_v7", String(rate))
+      localStorage.setItem("pv_note_v7", String(tripNote))
+      localStorage.setItem("pv_people_v7", JSON.stringify(people))
+      localStorage.setItem("pv_budgets_v7", JSON.stringify(budgets))
+      localStorage.setItem("pv_expenses_v7", JSON.stringify(expenses))
+    }
+
+    // Helpers (format)
+    function yenToEuro(y){ return y * rate }
+    function euroToYen(e){ return e / rate }
+
+    function formatEUR(n){
+      const sign = n < 0 ? "-" : ""
+      const abs = Math.abs(n)
+      return sign + abs.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €"
+    }
+
+    function formatYEN(n){
+      const rounded = Math.round(n)
+      const sign = rounded < 0 ? "-" : ""
+      const abs = Math.abs(rounded)
+      return sign + abs.toLocaleString("fr-FR") + " ¥"
+    }
+
+    function todayISO(){
+      const d = new Date()
+      const y = d.getFullYear()
+      const m = String(d.getMonth()+1).padStart(2,"0")
+      const day = String(d.getDate()).padStart(2,"0")
+      return `${y}-${m}-${day}`
+    }
+
+    function safeText(s){
+      return (s ?? "").toString()
+    }
+
+    // Tabs
+    function showSaisie(){
+      pageSaisie.style.display = ""
+      pageRecap.style.display = "none"
+      tabSaisie.classList.add("active")
+      tabRecap.classList.remove("active")
+      setStatus("ok","✅ OK : prêt — saisie")
+    }
+
+    function showRecap(){
+      pageSaisie.style.display = "none"
+      pageRecap.style.display = ""
+      tabSaisie.classList.remove("active")
+      tabRecap.classList.add("active")
+      renderRecap()
+      setStatus("ok","✅ OK : prêt — récap")
+    }
+
+    // Actions
+    function addPerson(){
+      const name = (elPersonName.value || "").trim()
+      if (!name) return setStatus("warn","⚠️ Entre un nom de participant")
+      if (people.includes(name)) return setStatus("warn","⚠️ Ce participant existe déjà")
+      people.push(name)
+      if (budgets[name] === undefined) budgets[name] = 0
+      elPersonName.value = ""
+      saveData()
+      renderAll()
+      setStatus("ok","✅ Participant ajouté : " + name)
+    }
+
+    function deletePerson(name){
+      people = people.filter(p => p !== name)
+      delete budgets[name]
+      saveData()
+      renderAll()
+      setStatus("ok","✅ Participant supprimé : " + name)
+    }
+
+    function addBudget(deltaSign){
+      const who = elBudgetPerson.value
+      const euroVal = Number(elBudgetEuro.value)
+      if (!who) return setStatus("warn","⚠️ Ajoute d’abord un participant")
+      if (!isFinite(euroVal)) return setStatus("warn","⚠️ Entre un montant valide (ex 1000)")
+      const delta = euroVal * deltaSign
+      budgets[who] = Number(budgets[who] || 0) + delta
+      elBudgetEuro.value = ""
+      saveData()
+      renderAll()
+      const signEmoji = deltaSign > 0 ? "➕" : "➖"
+      setStatus("ok", `✅ ${who} ${signEmoji} ${formatEUR(Math.abs(delta))} (budget total = ${formatEUR(budgets[who])})`)
+    }
+
+    function saveParams(){
+      const r = Number(elRateInput.value)
+      const note = (elTripNote.value || "").trim()
+      if (!r || r <= 0) return setStatus("warn","⚠️ Entre un taux valide (ex 0.0055)")
+      rate = r
+      tripNote = note
+      saveData()
+      renderAll()
+      setStatus("ok","✅ Paramètres enregistrés (tout recalculé)")
+    }
+
+    function addExpense(){
+      const payer = elPayer.value
+      const beneficiary = elBeneficiary.value
+      const category = elCategory.value
+      const label = (elLabel.value || "").trim()
+      const yen = Number(elYen.value)
+      const qty = Math.max(1, Number(elQty.value) || 1)
+      const date = elDate.value || todayISO()
+
+      if (!payer) return setStatus("warn","⚠️ Ajoute au moins 1 participant")
+      if (!beneficiary) return setStatus("warn","⚠️ Choisis pour qui c’est payé")
+      if (!yen || yen <= 0) return setStatus("warn","⚠️ Entre un montant yen valide")
+
+      const totalYen = Math.round(yen * qty)
+
+      expenses.push({
+        date,
+        payer,
+        beneficiary,
+        category,
+        label,
+        yen: totalYen
+      })
+
+      elLabel.value = ""
+      elYen.value = ""
+      elQty.value = "1"
+      saveData()
+      renderAll()
+      setStatus("ok","✅ Dépense ajoutée")
+    }
+
+    function deleteExpense(index){
+      expenses.splice(index, 1)
+      saveData()
+      renderAll()
+      setStatus("ok","✅ Dépense supprimée")
+    }
+
+    function resetAll(){
+      people = []
+      budgets = {}
+      expenses = []
+      tripNote = ""
+      rate = 0.0055
+      saveData()
+      renderAll()
+      showSaisie()
+      setStatus("ok","✅ Tout est réinitialisé")
+    }
+
+    // Rendering
+    function renderPeopleSelectors(){
+      const options = people.map(p => `<option value="${p}">${p}</option>`).join("")
+      elBudgetPerson.innerHTML = people.length ? options : `<option value="">Ajoute d’abord un participant</option>`
+      elPayer.innerHTML = people.length ? options : `<option value="">Ajoute d’abord un participant</option>`
+      elBeneficiary.innerHTML = people.length ? options : `<option value="">Ajoute d’abord un participant</option>`
+
+      if (people.length){
+        if (!elPayer.value) elPayer.value = people[0]
+        if (!elBeneficiary.value) elBeneficiary.value = elPayer.value
+      }
+    }
+
+    function renderPeopleTable(){
+      elPeopleTable.innerHTML = ""
+      people.forEach(p => {
+        const b = Number(budgets[p] || 0)
+        const tr = document.createElement("tr")
+        tr.innerHTML = `
+          <td>${p}</td>
+          <td>${formatEUR(b)}</td>
+          <td><button type="button" data-del="${p}">🗑️</button></td>
+        `
+        elPeopleTable.appendChild(tr)
+      })
+      elPeopleTable.querySelectorAll("button[data-del]").forEach(btn => {
+        btn.addEventListener("click", () => deletePerson(btn.dataset.del))
+      })
+    }
+
+    function renderExpensesTable(){
+      elExpenses.innerHTML = ""
+      expenses.forEach((e, i) => {
+        const euro = yenToEuro(e.yen)
+        const tr = document.createElement("tr")
+        tr.innerHTML = `
+          <td>${e.date}</td>
+          <td>${e.payer}</td>
+          <td>${e.beneficiary}</td>
+          <td>${e.category}</td>
+          <td>${e.label || "-"}</td>
+          <td>${formatYEN(e.yen)}</td>
+          <td>${formatEUR(euro)}</td>
+          <td><button type="button" data-i="${i}">❌</button></td>
+        `
+        elExpenses.appendChild(tr)
+      })
+      elExpenses.querySelectorAll("button[data-i]").forEach(btn => {
+        btn.addEventListener("click", () => deleteExpense(Number(btn.dataset.i)))
+      })
+    }
+
+    function renderParams(){
+      elRateInput.value = String(rate)
+      elTripNote.value = tripNote
+      if (!elDate.value) elDate.value = todayISO()
+    }
+
+    // Recap calculations
+    function computeStats(){
+      const stats = {}
+      people.forEach(p => {
+        stats[p] = {
+          budget: Number(budgets[p] || 0),
+          paidTotalEuro: 0,
+          paidForSelfEuro: 0,
+          paidForOthersEuro: 0
+        }
+      })
+
+      const debts = {} // key debtor|creditor -> euro
+
+      expenses.forEach(e => {
+        const euro = yenToEuro(e.yen)
+        if (!stats[e.payer]) stats[e.payer] = { budget:0, paidTotalEuro:0, paidForSelfEuro:0, paidForOthersEuro:0 }
+        stats[e.payer].paidTotalEuro += euro
+
+        if (e.payer === e.beneficiary){
+          stats[e.payer].paidForSelfEuro += euro
+        } else {
+          stats[e.payer].paidForOthersEuro += euro
+          const key = `${e.beneficiary}|||${e.payer}` // debtor -> creditor
+          debts[key] = (debts[key] || 0) + euro
+        }
+      })
+
+      Object.keys(stats).forEach(p => {
+        stats[p].remainingEuro = stats[p].budget - stats[p].paidTotalEuro
+        stats[p].remainingYen = euroToYen(stats[p].remainingEuro)
+      })
+
+      const debtsArr = Object.entries(debts)
+        .map(([k, v]) => {
+          const [debtor, creditor] = k.split("|||")
+          return { debtor, creditor, euro: v }
+        })
+        .filter(d => d.euro > 0.0000001)
+        .sort((a,b) => b.euro - a.euro)
+
+      return { stats, debtsArr }
+    }
+
+    function buildDebtTextPerPerson(person, debtsArr){
+      const owes = debtsArr.filter(d => d.debtor === person)
+      const receivables = debtsArr.filter(d => d.creditor === person)
+
+      const lines = []
+      if (owes.length > 0){
+        owes.forEach(d => lines.push({ kind:"owes", text:`${person} doit ${formatEUR(d.euro)} à ${d.creditor}` }))
+      }
+      if (receivables.length > 0){
+        receivables.forEach(d => lines.push({ kind:"receives", text:`${person} doit recevoir ${formatEUR(d.euro)} de ${d.debtor}` }))
+      }
+      if (lines.length === 0){
+        lines.push({ kind:"none", text:`${person} n’a aucune dette en cours` })
+      }
+      return lines
+    }
+
+    function renderRecap(){
+      const { stats, debtsArr } = computeStats()
+
+      elRecapHeader.textContent = `🗒️ ${tripNote || "-"}  •  💱 1¥=${rate}€  •  🧾 ${expenses.length} dépense(s)`
+
+      elRecapPeople.innerHTML = ""
+      people.forEach(p => {
+        const s = stats[p] || { budget:0, paidTotalEuro:0, remainingEuro:0, remainingYen:0, paidForSelfEuro:0, paidForOthersEuro:0 }
+        const remClass = s.remainingEuro < 0 ? "neg" : ""
+
+        const tr = document.createElement("tr")
+        tr.innerHTML = `
+          <td>${p}</td>
+          <td>${formatEUR(s.budget)}</td>
+          <td>${formatEUR(s.paidTotalEuro)}</td>
+          <td class="${remClass}">${formatEUR(s.remainingEuro)}</td>
+          <td class="${remClass}">${formatYEN(s.remainingYen)}</td>
+          <td>${formatEUR(s.paidForSelfEuro)}</td>
+          <td>${formatEUR(s.paidForOthersEuro)}</td>
+        `
+        elRecapPeople.appendChild(tr)
+
+        const lines = buildDebtTextPerPerson(p, debtsArr)
+        const noteTr = document.createElement("tr")
+        noteTr.className = "noteRow"
+        const td = document.createElement("td")
+        td.colSpan = 7
+        td.innerHTML = lines.map(l => {
+          if (l.kind === "owes") return `<div class="noteWarn">🟠 ${l.text}</div>`
+          if (l.kind === "receives") return `<div class="noteInfo">🔵 ${l.text}</div>`
+          return `<div class="noteOk">✅ ${l.text}</div>`
+        }).join("")
+        noteTr.appendChild(td)
+        elRecapPeople.appendChild(noteTr)
+      })
+
+      elRecapDebts.innerHTML = ""
+      if (debtsArr.length === 0){
+        const tr = document.createElement("tr")
+        tr.innerHTML = `<td colspan="3">✅ Aucune dette</td>`
+        elRecapDebts.appendChild(tr)
+      } else {
+        debtsArr.forEach(d => {
+          const tr = document.createElement("tr")
+          tr.innerHTML = `
+            <td>${d.debtor}</td>
+            <td>${d.creditor}</td>
+            <td>${formatEUR(d.euro)}</td>
+          `
+          elRecapDebts.appendChild(tr)
+        })
+      }
+
+      elRecapDetails.innerHTML = ""
+      const ordered = [...expenses].slice().sort((a,b) => (a.date > b.date ? -1 : a.date < b.date ? 1 : 0))
+      ordered.forEach(e => {
+        const tr = document.createElement("tr")
+        tr.innerHTML = `
+          <td>${e.date}</td>
+          <td>${e.payer}</td>
+          <td>${e.beneficiary}</td>
+          <td>${e.category}</td>
+          <td>${e.label || "-"}</td>
+          <td>${formatYEN(e.yen)}</td>
+          <td>${formatEUR(yenToEuro(e.yen))}</td>
+        `
+        elRecapDetails.appendChild(tr)
+      })
+    }
+
+    function renderAll(){
+      renderParams()
+      renderPeopleSelectors()
+      renderPeopleTable()
+      renderExpensesTable()
+      if (pageRecap.style.display !== "none") renderRecap()
+    }
+
+    // Live rate recalculation (real time)
+    elRateInput.addEventListener("input", () => {
+      const v = Number(elRateInput.value)
+      if (v && v > 0) {
+        rate = v
+        renderAll()
+      }
+    })
+
+    // Backup / Restore
+    function buildBackupObject(){
+      return {
+        app: "portefeuille-voyage",
+        version: 1,
+        exported_at: new Date().toISOString(),
+        data: {
+          rate,
+          tripNote,
+          people,
+          budgets,
+          expenses
+        }
+      }
+    }
+
+    function safeFileName(){
+      const base = (tripNote || "portefeuille").trim().toLowerCase()
+        .replaceAll(" ", "-")
+        .replaceAll(/[^a-z0-9\-]/g, "")
+        .slice(0, 40) || "portefeuille"
+      const date = todayISO()
+      return `${base}-${date}.json`
+    }
+
+    async function backupNow(){
+      try{
+        const obj = buildBackupObject()
+        const text = JSON.stringify(obj, null, 2)
+        const blob = new Blob([text], { type: "application/json" })
+        const fileName = safeFileName()
+
+        // iOS Safari: Web Share (si dispo) -> super pratique
+        try{
+          const file = new File([blob], fileName, { type: "application/json" })
+          if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
+            await navigator.share({ files: [file], title: "Sauvegarde Portefeuille", text: "Sauvegarde JSON" })
+            setStatus("ok", "✅ Sauvegarde partagée (choisis iCloud/WhatsApp/Fichiers)")
+            return
+          }
+        } catch(_){}
+
+        // Fallback: téléchargement classique
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        a.remove()
+        setTimeout(() => URL.revokeObjectURL(url), 2000)
+
+        setStatus("ok", "✅ Sauvegarde téléchargée (Fichiers / Téléchargements)")
+      } catch(e){
+        setStatus("err", "❌ Impossible de sauvegarder : " + (e?.message || "erreur"))
+      }
+    }
+
+    function requestRestore(){
+      elRestoreFile.value = ""
+      elRestoreFile.click()
+    }
+
+    function validateBackup(obj){
+      if (!obj || typeof obj !== "object") return false
+      if (!obj.data || typeof obj.data !== "object") return false
+      const d = obj.data
+      if (typeof d.rate !== "number" || !(d.rate > 0)) return false
+      if (!Array.isArray(d.people)) return false
+      if (typeof d.budgets !== "object" || d.budgets === null) return false
+      if (!Array.isArray(d.expenses)) return false
+      return true
+    }
+
+    function applyBackup(obj){
+      const d = obj.data
+      rate = Number(d.rate)
+      tripNote = safeText(d.tripNote)
+      people = d.people.map(x => safeText(x)).filter(x => x.trim() !== "")
+      budgets = {}
+      Object.keys(d.budgets || {}).forEach(k => { budgets[safeText(k)] = Number(d.budgets[k] || 0) })
+      expenses = (d.expenses || []).map(e => ({
+        date: safeText(e.date) || todayISO(),
+        payer: safeText(e.payer),
+        beneficiary: safeText(e.beneficiary),
+        category: safeText(e.category) || "✨ Autre",
+        label: safeText(e.label),
+        yen: Math.round(Number(e.yen || 0))
+      })).filter(e => e.payer && e.beneficiary && e.yen > 0)
+      saveData()
+      renderAll()
+    }
+
+    elRestoreFile.addEventListener("change", () => {
+      const f = elRestoreFile.files && elRestoreFile.files[0]
+      if (!f) return
+      const reader = new FileReader()
+      reader.onload = () => {
+        try{
+          const text = String(reader.result || "")
+          const obj = JSON.parse(text)
+          if (!validateBackup(obj)){
+            setStatus("err", "❌ Fichier invalide (pas une sauvegarde reconnue)")
+            return
+          }
+          const ok = confirm("Restaurer cette sauvegarde va remplacer tes données actuelles. Continuer ?")
+          if (!ok) return
+          applyBackup(obj)
+          setStatus("ok", "✅ Sauvegarde restaurée")
+          showRecap()
+        } catch(e){
+          setStatus("err", "❌ Impossible de lire la sauvegarde : " + (e?.message || "erreur"))
+        }
+      }
+      reader.onerror = () => setStatus("err", "❌ Erreur de lecture du fichier")
+      reader.readAsText(f)
+    })
+
+    // Events
+    tabSaisie.addEventListener("click", showSaisie)
+    tabRecap.addEventListener("click", showRecap)
+
+    elBtnSaveRate.addEventListener("click", saveParams)
+    elBtnAddPerson.addEventListener("click", addPerson)
+
+    elBtnAddBudget.addEventListener("click", () => addBudget(+1))
+    elBtnRemoveBudget.addEventListener("click", () => addBudget(-1))
+
+    elBtnAddExpense.addEventListener("click", addExpense)
+    elBtnReset.addEventListener("click", resetAll)
+
+    elBtnBackup.addEventListener("click", backupNow)
+    elBtnRestore.addEventListener("click", requestRestore)
+
+    elPersonName.addEventListener("keydown", (e) => { if (e.key === "Enter") addPerson() })
+    elBudgetEuro.addEventListener("keydown", (e) => { if (e.key === "Enter") addBudget(+1) })
+    elLabel.addEventListener("keydown", (e) => { if (e.key === "Enter") addExpense() })
+    elYen.addEventListener("keydown", (e) => { if (e.key === "Enter") addExpense() })
+
+    elPayer.addEventListener("change", () => {
+      if (elBeneficiary.value === "" || elBeneficiary.value === elPayer.value) {
+        elBeneficiary.value = elPayer.value
+      }
+    })
+
+    // Init
+    loadData()
+    renderAll()
+    if (canStore){
+      setStatus("ok","✅ OK : prêt ")
+    } else {
+      setStatus("warn","⚠️ OK : prêt — mais la sauvegarde navigateur est bloquée en mode fichier")
+    }
+  </script>
+</body>
+</html>
