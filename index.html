@@ -2,36 +2,109 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>Portefeuille Voyage</title>
+
   <style>
-    body { font-family: Arial, sans-serif; background:#f5f5f5; padding:20px; max-width:1040px; margin:0 auto; }
+    /* iPhone / Safari : éviter que la page déborde */
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      background:#f5f5f5;
+      /* safe-area pour l'encoche + padding confortable */
+      padding: calc(14px + env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
+      margin: 0 auto;
+      max-width: 1040px;
+      box-sizing: border-box;
+    }
+
     h1 { text-align:center; margin: 6px 0 14px; }
     h2 { margin: 14px 0 8px; }
+
     label { display:block; margin-top:6px; }
-    input, select, button { width:100%; padding:10px; margin:6px 0; box-sizing:border-box; }
-    button { cursor:pointer; }
-    table { width:100%; border-collapse:collapse; background:#fff; margin-top:10px; }
-    th, td { border:1px solid #ddd; padding:8px; text-align:center; vertical-align: middle; }
+
+    input, select, button {
+      width:100%;
+      padding:10px;
+      margin:6px 0;
+      box-sizing:border-box;
+      font-size: 16px; /* évite le zoom iOS sur les inputs */
+    }
+
+    button {
+      cursor:pointer;
+      -webkit-appearance: none;
+      appearance: none;
+      border-radius: 14px;
+    }
+
     hr { margin: 18px 0; }
-    .box { background:#fff; border:1px solid #ddd; padding:12px; border-radius:14px; }
+
+    .box {
+      background:#fff;
+      border:1px solid #ddd;
+      padding:12px;
+      border-radius:14px;
+    }
+
     .msg { margin:10px 0; padding:10px; border-radius:14px; }
     .ok { background:#eef9ee; border:1px solid #bfe6bf; }
     .warn { background:#fff7e6; border:1px solid #ffd27a; }
     .err { background:#ffecec; border:1px solid #ffb3b3; }
+
     .tabs { display:flex; gap:10px; margin: 10px 0 14px; }
     .tabBtn { padding:10px; border-radius:14px; border:1px solid #ddd; background:#fff; }
     .tabBtn.active { border-color:#999; font-weight:bold; }
+
     .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:10px; }
     .grid3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap:10px; }
     .grid4 { display:grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap:10px; }
+
     .small { font-size:12px; color:#666; }
     .neg { font-weight:800; }
-    .noteRow td { text-align:left; background:#fafafa; }
+
+    /* ✅ Le fix principal iPhone : tableaux scrollables horizontalement */
+    .table-wrap {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+    }
+
+    table {
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      margin-top:10px;
+      /* si trop de colonnes, on scroll dans .table-wrap au lieu de casser la page */
+      min-width: 720px;
+    }
+
+    th, td {
+      border:1px solid #ddd;
+      padding:8px;
+      text-align:center;
+      vertical-align: middle;
+      white-space: nowrap; /* évite que tout se casse en 2 lignes */
+    }
+
+    .noteRow td { text-align:left; background:#fafafa; white-space: normal; }
     .noteOk { color:#1b7f2a; font-weight:700; }
     .noteWarn { color:#a05a00; font-weight:700; }
     .noteInfo { color:#0b5cad; font-weight:700; }
-    @media (max-width: 980px){ .grid2, .grid3, .grid4 { grid-template-columns:1fr; } }
+
+    /* Mobile : on met tout en 1 colonne */
+    @media (max-width: 980px){
+      .grid2, .grid3, .grid4 { grid-template-columns:1fr; }
+      body { max-width: 100%; }
+      table { min-width: 760px; } /* un peu plus large pour que le scroll soit confortable */
+    }
   </style>
 </head>
 
@@ -84,16 +157,18 @@
       <div class="small">Ex : Thomas +2000€ puis +1000€ plus tard, ou ➖ si tu t’es trompé</div>
 
       <h2>📋 Liste</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Participant</th>
-            <th>Budget total (€)</th>
-            <th>Suppr</th>
-          </tr>
-        </thead>
-        <tbody id="peopleTable"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Participant</th>
+              <th>Budget total (€)</th>
+              <th>Suppr</th>
+            </tr>
+          </thead>
+          <tbody id="peopleTable"></tbody>
+        </table>
+      </div>
     </div>
 
     <hr />
@@ -145,21 +220,23 @@
       <button id="btnAddExpense" type="button">✅ Ajouter dépense</button>
 
       <h2>🧾 Dépenses</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Payeur</th>
-            <th>Pour</th>
-            <th>Catégorie</th>
-            <th>Description</th>
-            <th>¥</th>
-            <th>€</th>
-            <th>Suppr</th>
-          </tr>
-        </thead>
-        <tbody id="expenses"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Payeur</th>
+              <th>Pour</th>
+              <th>Catégorie</th>
+              <th>Description</th>
+              <th>¥</th>
+              <th>€</th>
+              <th>Suppr</th>
+            </tr>
+          </thead>
+          <tbody id="expenses"></tbody>
+        </table>
+      </div>
 
       <button id="btnReset" type="button">🧨 Tout réinitialiser</button>
       <div class="small">Efface participants, budgets et dépenses</div>
@@ -181,49 +258,55 @@
       <div id="recapHeader" class="small" style="margin-top:8px;"></div>
 
       <h2>👤 Résumé par personne</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Personne</th>
-            <th>Budget (€)</th>
-            <th>Payé total (€)</th>
-            <th>Restant (€)</th>
-            <th>Restant (¥)</th>
-            <th>Payé pour soi (€)</th>
-            <th>Payé pour autres (€)</th>
-          </tr>
-        </thead>
-        <tbody id="recapPeople"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Personne</th>
+              <th>Budget (€)</th>
+              <th>Payé total (€)</th>
+              <th>Restant (€)</th>
+              <th>Restant (¥)</th>
+              <th>Payé pour soi (€)</th>
+              <th>Payé pour autres (€)</th>
+            </tr>
+          </thead>
+          <tbody id="recapPeople"></tbody>
+        </table>
+      </div>
 
       <h2>🔁 Qui doit quoi à qui</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Débiteur</th>
-            <th>Créancier</th>
-            <th>Montant (€)</th>
-          </tr>
-        </thead>
-        <tbody id="recapDebts"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Débiteur</th>
+              <th>Créancier</th>
+              <th>Montant (€)</th>
+            </tr>
+          </thead>
+          <tbody id="recapDebts"></tbody>
+        </table>
+      </div>
       <div class="small">Seules les dépenses “payeur ≠ pour” créent une dette</div>
 
       <h2>🧾 Détails des dépenses</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Payeur</th>
-            <th>Pour</th>
-            <th>Catégorie</th>
-            <th>Description</th>
-            <th>¥</th>
-            <th>€</th>
-          </tr>
-        </thead>
-        <tbody id="recapDetails"></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Payeur</th>
+              <th>Pour</th>
+              <th>Catégorie</th>
+              <th>Description</th>
+              <th>¥</th>
+              <th>€</th>
+            </tr>
+          </thead>
+          <tbody id="recapDetails"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -246,14 +329,12 @@
     }
     const canStore = storageAvailable()
 
-    // State
     let rate = 0.0055
     let tripNote = ""
     let people = []
     let budgets = {}
     let expenses = []
 
-    // Elements
     const pageSaisie = document.getElementById("pageSaisie")
     const pageRecap = document.getElementById("pageRecap")
     const tabSaisie = document.getElementById("tabSaisie")
@@ -282,21 +363,18 @@
     const elExpenses = document.getElementById("expenses")
     const elBtnReset = document.getElementById("btnReset")
 
-    // Recap elements
     const elRecapHeader = document.getElementById("recapHeader")
     const elRecapPeople = document.getElementById("recapPeople")
     const elRecapDebts = document.getElementById("recapDebts")
     const elRecapDetails = document.getElementById("recapDetails")
 
-    // Backup/Restore elements
     const elBtnBackup = document.getElementById("btnBackup")
     const elBtnRestore = document.getElementById("btnRestore")
     const elRestoreFile = document.getElementById("restoreFile")
 
-    // Storage
     function loadData(){
       if (!canStore){
-        setStatus("warn","⚠️ OK : prêt — mais la sauvegarde navigateur est bloquée en mode fichier")
+        setStatus("warn","⚠️ OK : prêt — sauvegarde navigateur bloquée en mode fichier")
         return
       }
       try{
@@ -323,7 +401,6 @@
       localStorage.setItem("pv_expenses_v7", JSON.stringify(expenses))
     }
 
-    // Helpers (format)
     function yenToEuro(y){ return y * rate }
     function euroToYen(e){ return e / rate }
 
@@ -352,7 +429,6 @@
       return (s ?? "").toString()
     }
 
-    // Tabs
     function showSaisie(){
       pageSaisie.style.display = ""
       pageRecap.style.display = "none"
@@ -370,7 +446,6 @@
       setStatus("ok","✅ OK : prêt — récap")
     }
 
-    // Actions
     function addPerson(){
       const name = (elPersonName.value || "").trim()
       if (!name) return setStatus("warn","⚠️ Entre un nom de participant")
@@ -467,7 +542,6 @@
       setStatus("ok","✅ Tout est réinitialisé")
     }
 
-    // Rendering
     function renderPeopleSelectors(){
       const options = people.map(p => `<option value="${p}">${p}</option>`).join("")
       elBudgetPerson.innerHTML = people.length ? options : `<option value="">Ajoute d’abord un participant</option>`
@@ -525,7 +599,6 @@
       if (!elDate.value) elDate.value = todayISO()
     }
 
-    // Recap calculations
     function computeStats(){
       const stats = {}
       people.forEach(p => {
@@ -537,7 +610,7 @@
         }
       })
 
-      const debts = {} // key debtor|creditor -> euro
+      const debts = {}
 
       expenses.forEach(e => {
         const euro = yenToEuro(e.yen)
@@ -548,7 +621,7 @@
           stats[e.payer].paidForSelfEuro += euro
         } else {
           stats[e.payer].paidForOthersEuro += euro
-          const key = `${e.beneficiary}|||${e.payer}` // debtor -> creditor
+          const key = `${e.beneficiary}|||${e.payer}`
           debts[key] = (debts[key] || 0) + euro
         }
       })
@@ -588,7 +661,6 @@
 
     function renderRecap(){
       const { stats, debtsArr } = computeStats()
-
       elRecapHeader.textContent = `🗒️ ${tripNote || "-"}  •  💱 1¥=${rate}€  •  🧾 ${expenses.length} dépense(s)`
 
       elRecapPeople.innerHTML = ""
@@ -664,7 +736,6 @@
       if (pageRecap.style.display !== "none") renderRecap()
     }
 
-    // Live rate recalculation (real time)
     elRateInput.addEventListener("input", () => {
       const v = Number(elRateInput.value)
       if (v && v > 0) {
@@ -673,19 +744,12 @@
       }
     })
 
-    // Backup / Restore
     function buildBackupObject(){
       return {
         app: "portefeuille-voyage",
         version: 1,
         exported_at: new Date().toISOString(),
-        data: {
-          rate,
-          tripNote,
-          people,
-          budgets,
-          expenses
-        }
+        data: { rate, tripNote, people, budgets, expenses }
       }
     }
 
@@ -705,7 +769,6 @@
         const blob = new Blob([text], { type: "application/json" })
         const fileName = safeFileName()
 
-        // iOS Safari: Web Share (si dispo) -> super pratique
         try{
           const file = new File([blob], fileName, { type: "application/json" })
           if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share){
@@ -715,7 +778,6 @@
           }
         } catch(_){}
 
-        // Fallback: téléchargement classique
         const url = URL.createObjectURL(blob)
         const a = document.createElement("a")
         a.href = url
@@ -724,7 +786,6 @@
         a.click()
         a.remove()
         setTimeout(() => URL.revokeObjectURL(url), 2000)
-
         setStatus("ok", "✅ Sauvegarde téléchargée (Fichiers / Téléchargements)")
       } catch(e){
         setStatus("err", "❌ Impossible de sauvegarder : " + (e?.message || "erreur"))
@@ -791,7 +852,6 @@
       reader.readAsText(f)
     })
 
-    // Events
     tabSaisie.addEventListener("click", showSaisie)
     tabRecap.addEventListener("click", showRecap)
 
@@ -818,14 +878,15 @@
       }
     })
 
-    // Init
     loadData()
     renderAll()
+
     if (canStore){
-      setStatus("ok","✅ OK : prêt ")
+      setStatus("ok","✅ OK : prêt — iPhone OK (tableaux scrollables)")
     } else {
       setStatus("warn","⚠️ OK : prêt — mais la sauvegarde navigateur est bloquée en mode fichier")
     }
   </script>
 </body>
 </html>
+
